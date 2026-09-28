@@ -1,0 +1,16 @@
+# Dados (o CSV bruto é pesado e não deve ir para o Git; ver README para link do Kaggle)
+data/raw/*.csv
+data/processed/*.db
+
+# Ambiente Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Artefatos de modelo (também pesados; regenerados via src/train_model.py)
+models/*.joblib
+
+# Sistema
+.DS_Store

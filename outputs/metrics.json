@@ -1,0 +1,136 @@
+{
+  "resultados_modelos": [
+    {
+      "model": "Dummy (baseline)",
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "f2": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.0017,
+      "true_negative": 84976,
+      "false_positive": 0,
+      "false_negative": 142,
+      "true_positive": 0,
+      "custo_financeiro_simulado_R$": 71000.0
+    },
+    {
+      "model": "Regressão Logística",
+      "precision": 0.0509,
+      "recall": 0.8873,
+      "f1": 0.0963,
+      "f2": 0.207,
+      "roc_auc": 0.9629,
+      "pr_auc": 0.6911,
+      "true_negative": 82627,
+      "false_positive": 2349,
+      "false_negative": 16,
+      "true_positive": 126,
+      "custo_financeiro_simulado_R$": 19745.0
+    },
+    {
+      "model": "Random Forest",
+      "precision": 0.8833,
+      "recall": 0.7465,
+      "f1": 0.8092,
+      "f2": 0.7703,
+      "roc_auc": 0.9678,
+      "pr_auc": 0.8082,
+      "true_negative": 84962,
+      "false_positive": 14,
+      "false_negative": 36,
+      "true_positive": 106,
+      "custo_financeiro_simulado_R$": 18070.0
+    },
+    {
+      "model": "XGBoost (scale_pos_weight)",
+      "precision": 0.9,
+      "recall": 0.7606,
+      "f1": 0.8244,
+      "f2": 0.7849,
+      "roc_auc": 0.9661,
+      "pr_auc": 0.8154,
+      "true_negative": 84964,
+      "false_positive": 12,
+      "false_negative": 34,
+      "true_positive": 108,
+      "custo_financeiro_simulado_R$": 17060.0
+    },
+    {
+      "model": "XGBoost (threshold otimizado p/ F2)",
+      "precision": 0.8409,
+      "recall": 0.7817,
+      "f1": 0.8102,
+      "f2": 0.7929,
+      "roc_auc": 0.9661,
+      "pr_auc": 0.8154,
+      "true_negative": 84955,
+      "false_positive": 21,
+      "false_negative": 31,
+      "true_positive": 111,
+      "threshold": 0.1472,
+      "custo_financeiro_simulado_R$": 15605.0
+    },
+    {
+      "model": "XGBoost + SMOTE",
+      "precision": 0.7826,
+      "recall": 0.7606,
+      "f1": 0.7714,
+      "f2": 0.7649,
+      "roc_auc": 0.9677,
+      "pr_auc": 0.7937,
+      "true_negative": 84946,
+      "false_positive": 30,
+      "false_negative": 34,
+      "true_positive": 108,
+      "custo_financeiro_simulado_R$": 17150.0
+    },
+    {
+      "model": "Isolation Forest (não-supervisionado)",
+      "precision": 0.234,
+      "recall": 0.2324,
+      "f1": 0.2332,
+      "f2": 0.2327,
+      "roc_auc": 0.9402,
+      "pr_auc": 0.1375,
+      "true_negative": 84868,
+      "false_positive": 108,
+      "false_negative": 109,
+      "true_positive": 33,
+      "custo_financeiro_simulado_R$": 55040.0
+    }
+  ],
+  "validacao_cruzada_xgboost": {
+    "pr_auc_mean": 0.8426,
+    "pr_auc_std": 0.0383,
+    "folds": [
+      0.7999,
+      0.8043,
+      0.8382,
+      0.8995,
+      0.8709
+    ]
+  },
+  "top_10_features_xgboost": {
+    "V14": 0.550000011920929,
+    "V4": 0.06909999996423721,
+    "V10": 0.04089999943971634,
+    "V12": 0.03150000050663948,
+    "V8": 0.029500000178813934,
+    "V3": 0.02459999918937683,
+    "V19": 0.021400000900030136,
+    "V7": 0.018300000578165054,
+    "V20": 0.01590000092983246,
+    "Amount_log": 0.01489999983459711
+  },
+  "parametros_custo_simulado": {
+    "custo_medio_fraude_nao_detectada_R$": 500.0,
+    "custo_operacional_falso_alarme_R$": 5.0
+  },
+  "split_info": {
+    "n_treino": 198608,
+    "n_teste": 85118,
+    "fraudes_treino": 331,
+    "fraudes_teste": 142
+  }
+}
