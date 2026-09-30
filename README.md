@@ -1,4 +1,4 @@
-# 🏦 Detecção de Fraude em Transações Bancárias — Global Trust Bank
+# Detecção de Fraude em Transações Bancárias — Global Trust Bank
 
 Projeto final do curso **EBAC — Profissão: Cientista de Dados** (Módulo 43).
 Simula o atendimento a um gestor de risco de um grande banco que precisa de
@@ -11,7 +11,7 @@ experiência de clientes legítimos.
 > orientada a negócio e um dashboard interativo para exploração dos
 > resultados.
 
-## 📌 O problema de negócio
+## O problema de negócio
 
 | Item | Definição |
 |---|---|
@@ -21,7 +21,7 @@ experiência de clientes legítimos.
 | Volume analisado | 284.807 transações em ~2 dias · 492 fraudes (0,172%) |
 | Desafio central | Dataset extremamente desbalanceado (~578 transações legítimas para cada fraude) |
 
-## 🗂️ Estrutura do repositório
+## Estrutura do repositório
 
 ```
 fraud-detection-global-trust/
@@ -52,7 +52,7 @@ fraud-detection-global-trust/
 └── README.md
 ```
 
-## 🧠 Por que essa arquitetura
+## Por que essa arquitetura
 
 O projeto foi organizado como um pipeline de dados real, não como um único
 notebook monolítico:
@@ -70,7 +70,7 @@ notebook monolítico:
   (o "stakeholder"), incluindo um simulador interativo de threshold de
   decisão.
 
-## 📥 Dados
+## Dados
 
 A base usada é a clássica **Credit Card Fraud Detection** (transações
 europeias, setembro/2013), disponibilizada pela EBAC para este módulo com
@@ -81,7 +81,7 @@ o nome `Base_M43_Pratique_CREDIT_CARD_FRAUD.csv`. O arquivo tem ~150 MB e
 2. Rode `python sql/load_data.py` para gerar o banco SQLite.
 3. Siga os passos de reprodução abaixo.
 
-## ▶️ Como reproduzir
+## Como reproduzir
 
 ```bash
 # 1. Criar ambiente e instalar dependências
@@ -102,7 +102,7 @@ jupyter notebook notebooks/01_eda_e_modelagem.ipynb
 streamlit run dashboard/app.py
 ```
 
-## 🔍 Principais insights da EDA
+## Principais insights da EDA
 
 - O desbalanceamento é extremo (0,172% de fraude) — **acurácia não é uma
   métrica válida** neste problema.
@@ -123,7 +123,7 @@ streamlit run dashboard/app.py
 Detalhamento completo, com os 7 métodos de EDA e os testes estatísticos,
 está no notebook `notebooks/01_eda_e_modelagem.ipynb`.
 
-## 🤖 Modelagem
+## Modelagem
 
 Split estratificado em **3 partes** — 60% treino / 15% validação / 25%
 teste — com scaler ajustado apenas no treino, sem vazamento de dados. O
@@ -150,7 +150,7 @@ abaixo).
 > `colsample_bytree≈0,64`, `min_child_weight=7`. Ver
 > `outputs/metrics.json` para os valores exatos.
 
-### ⚙️ Metodologia do threshold: por que um conjunto de validação separado
+### Metodologia do threshold: por que um conjunto de validação separado
 
 Em versões anteriores deste projeto, o threshold de decisão era
 escolhido observando o desempenho no próprio conjunto de teste — uma
@@ -176,7 +176,7 @@ quase 89% das fraudes e reduz o custo total simulado de ~R$11.000 para
 > simplificada — validar com o time de risco antes de adotar em produção.
 > O dashboard permite testar outras proporções de custo interativamente.
 
-### 🎯 Calibração de probabilidade
+### Calibração de probabilidade
 
 O XGBoost gera *scores* que discriminam bem entre classes, mas não são
 necessariamente probabilidades bem calibradas (comum em modelos de
@@ -219,7 +219,7 @@ transações com maior score — uma visão mais acionável para dimensionar
 a capacidade operacional do time de revisão manual.
 
 
-## 📊 Dashboard
+## Dashboard
 
 O dashboard (`streamlit run dashboard/app.py`) tem 4 seções:
 
@@ -229,7 +229,7 @@ O dashboard (`streamlit run dashboard/app.py`) tem 4 seções:
 4. **Simulador de Threshold** — ajuste o limiar de decisão e os custos de
    FN/FP em tempo real e veja o impacto na matriz de confusão.
 
-## ⚠️ Limitações conhecidas
+## Limitações conhecidas
 
 - **O threshold recomendado assume a proporção de custo 100:1 (FN:FP).**
   Ela é hipotética; se o custo operacional de revisar um alerta for
@@ -245,11 +245,11 @@ O dashboard (`streamlit run dashboard/app.py`) tem 4 seções:
   uma busca mais ampla (ou bayesiana, via Optuna) tende a melhorar ainda
   mais o resultado.
 
-## 🛠️ Stack utilizada
+## Stack utilizada
 
 Python (pandas, NumPy, scikit-learn, XGBoost, imbalanced-learn, SciPy, SHAP) ·
 SQL (SQLite) · Streamlit + Plotly · Jupyter Notebook.
 
 ---
 
-**Autora:** Yu · [GitHub](https://github.com/TalitaLuci)
+**Autora:** Talita Luci · [GitHub](https://github.com/TalitaLuci)
