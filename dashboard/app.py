@@ -68,8 +68,12 @@ tab_overview, tab_eda, tab_models, tab_simulator = st.tabs(
 # =====================================================================
 with tab_overview:
     split_info = metrics["split_info"]
-    total_transacoes = split_info["n_treino"] + split_info["n_teste"]
-    total_fraudes = split_info["fraudes_treino"] + split_info["fraudes_teste"]
+    total_transacoes = (
+        split_info["n_treino"] + split_info.get("n_validacao", 0) + split_info["n_teste"]
+    )
+    total_fraudes = (
+        split_info["fraudes_treino"] + split_info.get("fraudes_validacao", 0) + split_info["fraudes_teste"]
+    )
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Transações analisadas", f"{total_transacoes:,}".replace(",", "."))
@@ -94,10 +98,13 @@ with tab_overview:
     c4.metric("Custo simulado (teste)", f"R$ {best_model_row['custo_financeiro_simulado_R$']:,.2f}".replace(",", "."))
 
     st.info(
-        "💡 **Leitura de negócio:** o modelo recomendado captura a maior parte das fraudes "
-        "com o menor custo financeiro simulado (falsos negativos custam muito mais que falsos "
-        "positivos neste cenário). Veja a aba **Simulador de Threshold** para ajustar esse "
-        "trade-off interativamente."
+        "💡 **Leitura de negócio:** o threshold foi escolhido minimizando diretamente o "
+        "custo financeiro simulado (não uma métrica-proxy) em um conjunto de validação "
+        "separado do teste. Dado que o custo de deixar passar uma fraude (R$500) é 100x "
+        "maior que o de um falso alarme (R$5), a otimização empurra o threshold para bem "
+        "baixo — o modelo passa a sinalizar muito mais transações como suspeitas, o que só "
+        "faz sentido se essa proporção de custo refletir a realidade do banco. Ajuste os "
+        "valores na aba **Simulador de Threshold** para ver como isso muda com custos reais."
     )
 
 # =====================================================================
@@ -187,11 +194,67 @@ with tab_models:
                       labels={"x": "Importância (gain)", "y": ""})
     st.plotly_chart(fig_imp, use_container_width=True)
 
+    st.subheader("Curva de Ganho Acumulado")
+    st.caption("Se o time de risco revisar apenas as transações com maior score, quantas fraudes captura?")
+    gain_df = predictions.sort_values("proba_fraude_xgb", ascending=False).reset_index(drop=True)
+    gain_df["pct_revisado"] = (gain_df.index + 1) / len(gain_df) * 100
+    gain_df["pct_capturado"] = gain_df["Class_real"].cumsum() / gain_df["Class_real"].sum() * 100
+    fig_gain = px.line(gain_df[gain_df["pct_revisado"] <= 20], x="pct_revisado", y="pct_capturado",
+                        labels={"pct_revisado": "% de transações revisadas", "pct_capturado": "% de fraudes capturadas"})
+    fig_gain.add_shape(type="line", x0=0, y0=0, x1=20, y1=20, line=dict(dash="dash", color="gray"))
+    st.plotly_chart(fig_gain, use_container_width=True)
+
     cv = metrics["validacao_cruzada_xgboost"]
     st.caption(
         f"Validação cruzada estratificada (5 folds) — PR-AUC médio: **{cv['pr_auc_mean']}** "
         f"(± {cv['pr_auc_std']}) · folds individuais: {cv['folds']}"
     )
+    if "hiperparametros_tunados_xgboost" in metrics:
+        with st.expander("Hiperparâmetros tunados (RandomizedSearchCV)"):
+            st.json(metrics["hiperparametros_tunados_xgboost"])
+
+    st.subheader("Calibração de probabilidade")
+    st.caption(
+        "O XGBoost gera scores que discriminam bem entre classes, mas não são "
+        "necessariamente probabilidades reais (é comum ficarem superconfiantes). "
+        "Calibramos com regressão isotônica ajustada na validação — o reliability "
+        "diagram mostra o quão perto a probabilidade prevista fica da frequência real."
+    )
+    if "calibracao_probabilidade" in metrics:
+        cal = metrics["calibracao_probabilidade"]
+        cb1, cb2, cb3 = st.columns(3)
+        cb1.metric("Brier Score (antes)", f"{cal['brier_score_antes']:.6f}")
+        cb2.metric("Brier Score (depois)", f"{cal['brier_score_depois']:.6f}",
+                   delta=f"{cal['brier_score_depois'] - cal['brier_score_antes']:.6f}",
+                   delta_color="inverse")
+        cb3.metric("Threshold calibrado", f"{cal['threshold_calibrado']:.4f}")
+
+        rd = cal["reliability_diagram"]
+        fig_rel = go.Figure()
+        fig_rel.add_trace(go.Scatter(
+            x=rd["antes"]["prob_media_prevista"], y=rd["antes"]["fracao_real_positiva"],
+            mode="lines+markers", name="Antes (bruto)",
+        ))
+        fig_rel.add_trace(go.Scatter(
+            x=rd["depois"]["prob_media_prevista"], y=rd["depois"]["fracao_real_positiva"],
+            mode="lines+markers", name="Depois (calibrado)",
+        ))
+        fig_rel.add_trace(go.Scatter(
+            x=[0, 1], y=[0, 1], mode="lines", name="Calibração perfeita",
+            line=dict(dash="dash", color="gray"),
+        ))
+        fig_rel.update_layout(
+            title="Reliability Diagram (teste)",
+            xaxis_title="Probabilidade média prevista",
+            yaxis_title="Fração real de fraude no bin",
+        )
+        st.plotly_chart(fig_rel, use_container_width=True)
+        st.caption(
+            "Nota: recall, precisão e custo no threshold ótimo não mudam com a "
+            "calibração — só o *valor* do threshold, que passa a ter significado "
+            "real de probabilidade (ex.: 6,25% de chance de fraude, em vez de um "
+            "score arbitrário de 1,12%)."
+        )
 
 # =====================================================================
 with tab_simulator:
@@ -200,12 +263,19 @@ with tab_simulator:
         "Ajuste o limiar de probabilidade a partir do qual uma transação é sinalizada "
         "como fraude, e veja o impacto em tempo real nas métricas e no custo financeiro."
     )
+    st.caption(
+        "As probabilidades usadas aqui são **calibradas** (regressão isotônica): "
+        "um threshold de 0,0625 significa, de fato, 'sinalizar transações com 6,25% "
+        "ou mais de chance estimada de fraude' — não um score arbitrário."
+    )
 
     custo_fn = st.number_input("Custo de um Falso Negativo (fraude não detectada) — R$",
                                 min_value=0.0, value=500.0, step=50.0)
     custo_fp = st.number_input("Custo de um Falso Positivo (cliente legítimo sinalizado) — R$",
                                 min_value=0.0, value=5.0, step=1.0)
-    threshold = st.slider("Threshold de decisão", min_value=0.0, max_value=1.0, value=0.15, step=0.01)
+    threshold_recomendado = metrics.get("calibracao_probabilidade", {}).get("threshold_calibrado", 0.0625)
+    threshold = st.slider("Threshold de decisão (probabilidade calibrada)",
+                           min_value=0.0, max_value=1.0, value=float(threshold_recomendado), step=0.005)
 
     y_true = predictions["Class_real"]
     y_proba = predictions["proba_fraude_xgb"]

@@ -14,7 +14,21 @@ RAW_CSV = ROOT / "data" / "raw" / "creditcard.csv"
 
 
 def load_raw_data(path: Path = RAW_CSV) -> pd.DataFrame:
-    """Carrega o CSV bruto e normaliza o tipo da coluna Class."""
+    """
+    Carrega o CSV bruto de transações e normaliza o tipo da coluna Class.
+
+    Parâmetros
+    ----------
+    path : Path
+        Caminho para o CSV bruto. Default: data/raw/creditcard.csv.
+
+    Retorna
+    -------
+    pd.DataFrame
+        Dataframe com as colunas originais (Time, V1..V28, Amount, Class),
+        com `Class` já convertida para inteiro (o arquivo bruto traz essa
+        coluna como string "0"/"1").
+    """
     df = pd.read_csv(path)
     df["Class"] = df["Class"].astype(int)
     return df
@@ -22,12 +36,36 @@ def load_raw_data(path: Path = RAW_CSV) -> pd.DataFrame:
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Remove duplicatas exatas (armadilha estrutural conhecida desta base:
-    ~1.081 linhas repetidas) e garante ausência de nulos.
+    Remove duplicatas exatas e valida ausência de nulos.
 
-    Não faz nenhuma transformação sensível a distribuição (scaling,
-    reamostragem) aqui -- isso só pode acontecer depois do split, para
-    evitar vazamento de dados (data leakage).
+    Parâmetros
+    ----------
+    df : pd.DataFrame
+        Dataframe bruto (ver `load_raw_data`).
+
+    Retorna
+    -------
+    pd.DataFrame
+        Dataframe sem duplicatas, com índice resetado.
+
+    Levanta
+    -------
+    ValueError
+        Se restarem valores nulos após a limpeza (não esperado nesta
+        base, mas validado defensivamente).
+
+    Notas
+    -----
+    Armadilha estrutural conhecida desta base: ~1.081 linhas
+    completamente duplicadas (idênticas em TODAS as colunas, incluindo
+    `Time` e `Class` -- portanto não podem ser transações legítimas
+    diferentes ocorrendo no mesmo segundo, e sim registros repetidos).
+    Removê-las antes do split evita que a mesma observação apareça em
+    treino e teste simultaneamente (vazamento de dados).
+
+    Esta função não faz nenhuma transformação sensível a distribuição
+    (scaling, reamostragem) -- isso só pode acontecer depois do split,
+    para evitar vazamento de dados (data leakage).
     """
     n_antes = len(df)
     df = df.drop_duplicates().reset_index(drop=True)
@@ -42,7 +80,7 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def load_clean_data(path: Path = RAW_CSV) -> pd.DataFrame:
-    """Atalho: carrega + limpa em uma chamada."""
+    """Atalho: `load_raw_data` + `clean_data` em uma chamada."""
     return clean_data(load_raw_data(path))
 
 
